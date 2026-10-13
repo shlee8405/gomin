@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { promises as fs, utimesSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { VERSION, ensureWritableHome, readJson, sandboxHint, threadIdFor } from '../skills/gomin/scripts/lib/common.mjs';
 import { injectRuntime, kitEnabled, lint, pageTitle } from '../skills/gomin/scripts/lib/html.mjs';
 import { openPage, sendReply } from '../skills/gomin/scripts/lib/store.mjs';
-import { formatReply } from '../skills/gomin/scripts/lib/format.mjs';
+import { NEXT_ENDED, NEXT_REPLY, formatReplies, formatReply } from '../skills/gomin/scripts/lib/format.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(ROOT, 'skills/gomin/scripts/gomin.mjs');
@@ -112,6 +112,22 @@ test('sendReply sends only changed answers, reports unanswered questions, and cl
   assert.throws(() => sendReply(thread, { draft: thread.draft, pageId: page.id }), /Nothing to send/);
   const again = sendReply(thread, { draft: { ...thread.draft, message: 'one more thing' }, pageId: page.id });
   assert.equal(again.answers.length, 0);
+});
+
+test('ending the conversation is a reply of its own and tells the agent to stop', () => {
+  const thread = { seq: 0, events: [], pages: {}, currentPageId: null, draft: { message: '', comments: [], pages: {} } };
+  const { page } = openPage(thread, { file: '/x/tour.html', title: 'Tour', mtimeMs: 1 });
+  const ended = sendReply(thread, { draft: thread.draft, pageId: page.id, end: true });
+  assert.equal(ended.ended, true);
+  const text = formatReplies([ended], thread);
+  assert.match(text, /Ended the conversation\./);
+  assert.ok(text.endsWith(NEXT_ENDED));
+
+  const reply = sendReply(thread, { draft: { ...thread.draft, message: 'What is in src/?' }, pageId: page.id });
+  const next = formatReplies([reply], thread);
+  assert.ok(next.endsWith(NEXT_REPLY));
+  assert.match(NEXT_REPLY, /answer in the page/);
+  assert.match(NEXT_REPLY, /wait` again/);
 });
 
 test('openPage announces new pages and revisions once', () => {
@@ -256,6 +272,36 @@ test('wait reports a closed page after the last tab disconnects', async () => {
   events.destroy();
   const result = await waiting;
   assert.match(result.stdout, /closed the gomin page/);
+});
+
+test('say --file posts Markdown and the End button stops the agent loop', async () => {
+  const p = await port();
+  const thread = threadIdFor(workspace);
+  const answer = path.join(temp, 'answer.md');
+  await fs.writeFile(answer, '## src/\n- `server.mjs`: the HTTP server\n- `store.mjs`: threads');
+  const said = await run(['say', '--file', answer]);
+  assert.equal(said.code, 0, said.stderr);
+  assert.match(said.stdout, /next: run "wait --thread/);
+  const state = JSON.parse((await run(['status', '--json'])).stdout);
+  assert.equal(state.events.at(-1).type, 'agent');
+  assert.match(state.events.at(-1).text, /`server\.mjs`/);
+
+  // A quoted heredoc on stdin keeps backticks and $ literal.
+  const literal = 'Run `id` and keep $HOME as is.';
+  execFileSync(process.execPath, [CLI, 'say'], { cwd: workspace, env, input: literal });
+  const after = JSON.parse((await run(['status', '--json'])).stdout);
+  assert.equal(after.events.at(-1).text, literal);
+
+  const ended = await raw(p, {
+    method: 'POST',
+    route: `/api/threads/${encodeURIComponent(thread)}/messages`,
+    headers: browser(p),
+    body: { draft: { message: '', comments: [], pages: {} }, end: true },
+  });
+  assert.equal(ended.status, 201, ended.text);
+  const result = JSON.parse((await run(['wait', '--json'])).stdout);
+  assert.equal(result.status, 'ended');
+  assert.match(result.text, /ended the conversation/);
 });
 
 test('the server rejects foreign hosts, cross-site requests, and path escapes', async () => {

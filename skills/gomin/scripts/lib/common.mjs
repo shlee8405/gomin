@@ -6,7 +6,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { mkdirSync, promises as fs, unlinkSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-export const VERSION = '0.1.1';
+export const VERSION = '0.2.0';
 export const SCRIPTS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const UI_DIR = path.join(SCRIPTS_DIR, 'ui');
 export const CLI_PATH = path.join(SCRIPTS_DIR, 'gomin.mjs');

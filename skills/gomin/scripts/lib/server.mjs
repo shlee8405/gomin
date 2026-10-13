@@ -174,7 +174,8 @@ export async function startServer({
       if (!pending.length) return;
       const at = now();
       for (const event of pending) event.deliveredAt = at;
-      payload = { status: 'reply', text: formatReplies(pending, thread), replies: pending };
+      const ended = pending.some((event) => event.ended);
+      payload = { status: ended ? 'ended' : 'reply', text: formatReplies(pending, thread), replies: pending };
     });
     return payload;
   }

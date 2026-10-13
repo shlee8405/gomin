@@ -181,7 +181,8 @@ export function sendReply(thread, input) {
   }
   const comments = draft.comments.filter((comment) => comment.text.trim() && (!comment.pageId || thread.pages[comment.pageId]));
   const message = draft.message.trim();
-  check(message || comments.length || answers.length || submitter, 'Nothing to send yet. Write a message, answer a question, or add a comment.');
+  const ended = input.end === true;
+  check(message || comments.length || answers.length || submitter || ended, 'Nothing to send yet. Write a message, answer a question, or add a comment.');
 
   const page = thread.pages[viewingPageId];
   const event = pushEvent(thread, {
@@ -194,6 +195,7 @@ export function sendReply(thread, input) {
     comments,
     unanswered: answers.length || submitter ? unanswered : [],
     submitter,
+    ended,
     deliveredAt: null,
   });
   thread.draft = { message: '', comments: [], pages: draft.pages };

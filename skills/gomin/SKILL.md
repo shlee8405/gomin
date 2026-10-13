@@ -30,7 +30,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/gomin.mjs" <command>
 | --- | --- |
 | `gomin open <file.html>` | Shows the page (a new page, or a revision if the file was opened before). Prints the URL. Opens a browser tab only if none is open on this thread; open tabs switch to the page by themselves. |
 | `gomin wait` | Blocks until the user sends a reply, then prints it. Never consumes anything else; silence is never approval. |
-| `gomin say "<text>"` | Posts a short note into the page's conversation, e.g. a quick answer or "Done, see the terminal". |
+| `gomin say` | Answers in the page's conversation panel, rendered as Markdown. Pass the text on stdin with a quoted heredoc (below) or `--file answer.md`. |
 | `gomin status` | Thread overview and recent replies (including ones already delivered), for when you lose track. |
 | `gomin export <file.html>` | Writes a standalone copy with the styles inlined, for sharing. |
 
@@ -44,13 +44,20 @@ node "${CLAUDE_SKILL_DIR}/scripts/gomin.mjs" <command>
    - **Codex:** run it in the foreground with a long `timeout_ms` (e.g. 1800000) so the wait stays attached to your turn. Background commands do not wake you.
    - **pi and other harnesses:** run it in the foreground; give it a long timeout if your shell tool has one.
    - If a wait is cut off by a tool timeout or interrupted, just run it again. Replies are kept until delivered.
-4. **Act on the reply.** It lists the message, changed answers (`question (name): label [value]`), comments with the quoted text or element they point at, and any button that was clicked. Then do one of these:
-   - **Revise** the same file (small edits are fine) and run `gomin open` on it again. The tab reloads in place and keeps the user's answers.
-   - **Answer with a new page**, for a new question or the next step: write a new file and `open` it.
-   - **Answer briefly** with `gomin say "…"`.
-   - **Do the work** the user approved, and report back in chat or with `say`.
-   Then `wait` again if you expect more input.
-5. **Stop** when the conversation has moved on. If `wait` says the user closed the page, continue in chat and do not reopen it uninvited.
+4. **Answer in the page, then wait again.** The reply lists the message, changed answers (`question (name): label [value]`), comments with the quoted text or element they point at, and any button that was clicked. Act on it, then answer where the user is looking, the page:
+   - **A short answer or follow-up:** `gomin say`, with the Markdown on stdin through a quoted heredoc. It appears in the panel right away:
+     ```sh
+     gomin say <<'EOF'
+     `src/db.js` opens **notes.db** and exports `db`.
+     EOF
+     ```
+     Keep the quotes around `'EOF'`. Never put Markdown in a double-quoted argument: the shell runs anything in backticks and expands `$…`, which corrupts the message and can leak command output into the page.
+   - **A bigger or structured answer:** revise the same file and run `gomin open` on it again (the tab reloads in place and keeps the user's answers), or write a new page and `open` it.
+   - **Work the user approved:** do it, then report back with `say`.
+   In the same message, run `gomin wait` again. Do not ask the user to come back to the terminal or to tell you they replied: the page is the conversation.
+5. **Keep the loop going** until `wait` reports that the user ended the conversation (the page's **End** button) or closed the page, or the user writes to you in the terminal. Then stop waiting, do not reopen the page uninvited, and continue in chat if anything is left.
+
+This makes the page a live chat: the user asks follow-ups, comments on parts of a page, or picks options, and your answers appear there within seconds. It works well for exploring a codebase, learning a topic step by step, or iterating on a plan.
 
 ## Writing a good page
 

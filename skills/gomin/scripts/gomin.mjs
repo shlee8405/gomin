@@ -13,7 +13,8 @@ Usage (run with node, e.g. node <skill-dir>/scripts/gomin.mjs <command>):
   open <file.html>   Show the page in the browser (new page or revision of the same file).
                      Re-run after editing the file; open tabs follow automatically.
   wait               Block until the user replies from the page, then print the reply.
-  say <text>         Post a short note to the page's conversation (no page needed).
+  say [text]         Answer in the page's conversation panel. Markdown: pipe it in with a quoted
+                     heredoc (gomin say <<'EOF' … EOF) so the shell expands nothing; or --file.
   status             Show the thread, its pages, and recent replies.
   list               List threads.
   export <file.html> Write a standalone copy with the style kit inlined (<name>.standalone.html).
@@ -26,13 +27,14 @@ Options:
   --timeout <sec>    (wait) Give up after this many seconds. Default: 0 = wait until a reply.
   --json             (wait, status) Machine-readable output.
   --out <file>       (export) Output path.
+  --file <file>      (say) Read the message from a Markdown file.
 
 Environment: GOMIN_HOME (state dir, default ~/.gomin), GOMIN_PORT (default 4949),
 GOMIN_NO_OPEN=1, GOMIN_THREAD, GOMIN_IDLE_MINUTES (server idle exit, default 30, 0 = never).
 
 Authoring guide: references/design.md and references/patterns.md next to SKILL.md.`;
 
-const VALUE_FLAGS = new Set(['thread', 'title', 'timeout', 'out', 'port']);
+const VALUE_FLAGS = new Set(['thread', 'title', 'timeout', 'out', 'port', 'file']);
 const BOOLEAN_FLAGS = new Set(['no-open', 'json', 'help', 'version']);
 
 function parse(argv) {
@@ -121,6 +123,19 @@ async function resolveThread(port, flags, { mustExist = true } = {}) {
 
 const threadUrl = (port, id) => `http://127.0.0.1:${port}/t/${encodeURIComponent(id)}`;
 
+// Reads a message piped to `say` (e.g. a quoted heredoc). Gives up if nothing arrives,
+// so a harness that leaves stdin open cannot hang the command.
+function readStdin(timeoutMs = 3000) {
+  if (process.stdin.isTTY) return Promise.resolve('');
+  return new Promise((resolve) => {
+    const chunks = [];
+    const timer = setTimeout(() => { process.stdin.pause(); resolve(Buffer.concat(chunks).toString('utf8')); }, timeoutMs);
+    process.stdin.on('data', (chunk) => chunks.push(chunk));
+    process.stdin.on('end', () => { clearTimeout(timer); resolve(Buffer.concat(chunks).toString('utf8')); });
+    process.stdin.on('error', () => { clearTimeout(timer); resolve(''); });
+  });
+}
+
 async function main() {
   const { command, positional, flags } = parse(process.argv.slice(2));
   if (flags.version) return console.log(VERSION);
@@ -207,10 +222,15 @@ async function main() {
   const thread = await resolveThread(port, flags);
 
   if (command === 'say') {
-    const text = positional.join(' ').trim();
-    if (!text) throw new Error('say needs text: gomin say "Done — the plan is implemented."');
+    const text = flags.file ? await fs.readFile(path.resolve(flags.file), 'utf8')
+      : positional.length ? positional.join(' ')
+      : await readStdin();
+    if (!text.trim()) throw new Error("say needs text. For Markdown, pass it on stdin with a quoted heredoc: gomin say <<'EOF' … EOF (or --file answer.md).");
     const result = await request(port, 'POST', `/api/threads/${encodeURIComponent(thread)}/say`, { text });
-    return console.log(`Posted to thread ${thread}${result.clients ? '' : ' (no browser tab is open right now)'}.`);
+    return console.log([
+      `Posted to thread ${thread}${result.clients ? '' : ' (no browser tab is open right now)'}.`,
+      `next: run "wait --thread ${thread}" to keep the conversation going, unless the user ended it.`,
+    ].join('\n'));
   }
 
   if (command === 'status') {

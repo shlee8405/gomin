@@ -13,6 +13,7 @@ Long plans, several options, explanations that need a table or a diagram: in cha
 - **For any response, not just plans.** Explanations, comparisons, reports, code reviews, and questionnaires all live in one conversation thread.
 - **Forms are the protocol.** Every `<input>`, `<select>`, and `<textarea>` with a `name` is sent back with its question text. The agent writes no JavaScript.
 - **Comment on anything.** Select text, or click an element in comment mode; the reply says exactly what you pointed at.
+- **Live in the page.** Ask follow-ups, comment, or pick options in the page, and the agent answers right there (Markdown messages or updated pages) and keeps listening until you press **End**. No going back to the terminal to say "I replied".
 - **Speaks your language.** Pages and the UI follow the language you write in: English stays English, Korean stays Korean. Korean gets first-class care: Pretendard, `keep-all` line breaking, and a composer that never sends mid-IME-composition.
 - **Built-in style kit.** Semantic HTML already looks finished: cards, callouts, choice cards, steps, tables, dark mode, and automatic Mermaid. The agent spends tokens on content, not CSS.
 - **Local and dependency-free.** Only Node.js is needed: no API keys, accounts, or MCP setup. The server listens on `127.0.0.1` only.
@@ -125,7 +126,7 @@ The skill runs the bundled script as `node <skill-dir>/scripts/gomin.mjs`.
 | --- | --- |
 | `open <file.html>` | Show a page; the same file again is a revision. `--title`, `--no-open`, `--thread` |
 | `wait` | Block until the user sends, then print the reply. `--timeout <sec>`, `--json` |
-| `say "<text>"` | Post a short note to the conversation panel |
+| `say` | Answer in the conversation panel, as Markdown read from stdin (`gomin say <<'EOF' … EOF`) or `--file answer.md` |
 | `status` | Thread, pages, and recent replies. `--json` |
 | `list` | List threads |
 | `export <file.html>` | Write a standalone copy with styles inlined, for sharing |

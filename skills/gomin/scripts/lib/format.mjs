@@ -49,17 +49,24 @@ export function formatReply(event, thread) {
     const { label, name, value } = event.submitter;
     lines.push('', `Clicked: ${label || value || name}${name ? ` [${name}=${value}]` : ''}`);
   }
+  if (event.ended) lines.push('', 'Ended the conversation.');
   return lines.join('\n');
 }
 
+export const NEXT_REPLY = 'Next: the user is reading the page, not your terminal. Act on this, then answer in the page: '
+  + "`gomin say <<'EOF'` … `EOF` for a short Markdown answer (quoted heredoc, never a double-quoted argument), or revise the page / open a new one for anything bigger. "
+  + 'Then run `gomin wait` again in the same message. Keep this loop going until the user ends the conversation.';
+export const NEXT_ENDED = 'The user ended the conversation in gomin. Stop waiting and do not reopen the page unless asked; continue in the terminal chat if anything is left.';
+
 export function formatReplies(events, thread) {
+  const ended = events.some((event) => event.ended);
   const header = events.length === 1 ? 'The user replied in gomin.' : `The user sent ${events.length} replies in gomin.`;
   return [
     header,
     '',
     events.map((event) => formatReply(event, thread)).join('\n\n'),
     '',
-    'Next: act on this. To revise, edit the page file and run `gomin open <file>` again; for a new answer, write a new page and open it; for a short answer, use `gomin say`. Then `gomin wait` again.',
+    ended ? NEXT_ENDED : NEXT_REPLY,
   ].join('\n');
 }
 

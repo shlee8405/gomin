@@ -3,6 +3,10 @@
 const I18N = {
   ko: {
     brand: '고민',
+    end: '끝내기',
+    endTitle: '대화를 끝내고 에이전트를 터미널로 돌려보내요',
+    ended: '대화를 끝냈어요',
+    working: '에이전트가 답하는 중',
     other: 'English',
     conversation: '대화',
     waiting: '에이전트가 기다리는 중',
@@ -45,6 +49,10 @@ const I18N = {
   },
   en: {
     brand: 'gomin',
+    end: 'End',
+    endTitle: 'End this conversation and send the agent back to the terminal',
+    ended: 'You ended the conversation',
+    working: 'Agent is working',
     other: '한국어',
     conversation: 'Conversation',
     waiting: 'Agent is listening',
@@ -193,6 +201,59 @@ function banner(message) {
   $('#banner').hidden = !message;
 }
 
+// ---------- Markdown for agent messages (built as DOM nodes, never as HTML) ----------
+
+const INLINE = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(\[[^\]\n]+\]\((https?:\/\/[^\s)]+)\))|(https?:\/\/[^\s<]*[^\s<.,;:!?)\]])|(\*[^*\s\n][^*\n]*\*)/g;
+
+function inline(text) {
+  const fragment = document.createDocumentFragment();
+  let last = 0;
+  for (const match of text.matchAll(INLINE)) {
+    fragment.append(text.slice(last, match.index));
+    const [token] = match;
+    if (match[1]) fragment.append(h('code', {}, token.slice(1, -1)));
+    else if (match[2]) fragment.append(h('strong', {}, token.slice(2, -2)));
+    else if (match[3]) fragment.append(h('a', { href: match[4], target: '_blank', rel: 'noopener noreferrer' }, token.slice(1, token.indexOf(']'))));
+    else if (match[5]) fragment.append(h('a', { href: token, target: '_blank', rel: 'noopener noreferrer' }, token));
+    else fragment.append(h('em', {}, token.slice(1, -1)));
+    last = match.index + token.length;
+  }
+  fragment.append(text.slice(last));
+  return fragment;
+}
+
+function markdown(source) {
+  const lines = String(source).replace(/\r\n/g, '\n').split('\n');
+  const blocks = [];
+  for (let i = 0; i < lines.length;) {
+    const line = lines[i];
+    if (/^```/.test(line)) {
+      const code = [];
+      for (i++; i < lines.length && !/^```/.test(lines[i]); i++) code.push(lines[i]);
+      blocks.push(h('pre', {}, h('code', {}, code.join('\n'))));
+      i++;
+    } else if (/^#{1,6}\s/.test(line)) {
+      blocks.push(h('p', { class: 'md-heading' }, inline(line.replace(/^#{1,6}\s+/, ''))));
+      i++;
+    } else if (/^\s*([-*]|\d+[.)])\s+/.test(line)) {
+      const ordered = /^\s*\d/.test(line);
+      const items = [];
+      for (; i < lines.length && /^\s*([-*]|\d+[.)])\s+/.test(lines[i]); i++) items.push(h('li', {}, inline(lines[i].replace(/^\s*([-*]|\d+[.)])\s+/, ''))));
+      blocks.push(h(ordered ? 'ol' : 'ul', {}, items));
+    } else if (!line.trim()) {
+      i++;
+    } else {
+      const paragraph = h('p');
+      for (let first = true; i < lines.length && lines[i].trim() && !/^(```|#{1,6}\s|\s*([-*]|\d+[.)])\s+)/.test(lines[i]); i++, first = false) {
+        if (!first) paragraph.append(h('br'));
+        paragraph.append(inline(lines[i]));
+      }
+      blocks.push(paragraph);
+    }
+  }
+  return blocks;
+}
+
 // ---------- Draft ----------
 
 function changedAnswers() {
@@ -309,10 +370,17 @@ function renderTopbar() {
   $('.brand-name').textContent = t.brand;
 }
 
+const agentWorking = () => {
+  const last = thread?.events.at(-1);
+  return !thread?.waiting && last?.type === 'user' && !!last.deliveredAt && !last.ended;
+};
+
 function renderPresence() {
   const on = !!thread?.waiting;
+  const working = agentWorking();
   $('#presence').classList.toggle('on', on);
-  $('#presence-label').textContent = on ? t.waiting : t.notWaiting;
+  $('#presence').classList.toggle('busy', working);
+  $('#presence-label').textContent = on ? t.waiting : working ? t.working : t.notWaiting;
   $('#composer-hint').textContent = on ? t.enterHint : t.notWaitingHint;
 }
 
@@ -353,6 +421,8 @@ function renderTimeline() {
         h('span', { class: 'meta' }, `${viewingPageId === event.pageId ? t.viewing : t.newPage} · ${time(event.at)}`)))));
     } else if (event.type === 'revise') {
       items.push(h('li', { class: 'event-revise' }, `✏️ ${short(pageById(event.pageId)?.title ?? event.title, 28)} · ${t.revised(event.rev)} · ${time(event.at)}`));
+    } else if (event.type === 'user' && event.ended && !event.message && !replyDetails(event)) {
+      items.push(h('li', { class: 'event-revise' }, `⏹ ${t.ended} · ${time(event.at)}`));
     } else if (event.type === 'user') {
       const details = replyDetails(event);
       if (details?.tagName === 'DETAILS') {
@@ -364,11 +434,18 @@ function renderTimeline() {
         event.message ? h('div', { class: 'bubble' }, event.message) : null,
         details,
         h('span', { class: `receipt${event.deliveredAt ? ' read' : ''}` }, event.deliveredAt ? `✓ ${t.read(time(event.deliveredAt))}` : t.unread)));
+      if (event.ended) items.push(h('li', { class: 'event-revise' }, `⏹ ${t.ended} · ${time(event.at)}`));
     } else if (event.type === 'agent') {
       items.push(h('li', { class: 'from-agent' },
         h('span', { class: 'who' }, `${t.agent} · ${time(event.at)}`),
-        h('div', { class: 'bubble' }, event.text)));
+        h('div', { class: 'bubble md' }, markdown(event.text))));
     }
+  }
+  // The agent has read the latest message and has not answered yet.
+  if (agentWorking()) {
+    items.push(h('li', { class: 'from-agent typing', role: 'status' },
+      h('span', { class: 'who' }, t.agent),
+      h('div', { class: 'bubble' }, h('span', { class: 'dots', 'aria-hidden': 'true' }, h('i'), h('i'), h('i')), ` ${t.working}`)));
   }
   if (!items.length) items.push(h('li', { class: 'empty' }, t.emptyTimeline));
   list.replaceChildren(...items);
@@ -416,6 +493,10 @@ function renderComposer() {
   if (answers.length) summary.push(t.answers(answers.length));
   $('#handle-summary').textContent = summary.join(' · ');
   $('#panel-title').textContent = t.conversation;
+  $('#end').textContent = t.end;
+  $('#end').title = t.endTitle;
+  const last = thread.events.at(-1);
+  $('#end').hidden = !thread.pages.length || (last?.type === 'user' && last.ended);
 }
 
 function render() {
@@ -430,21 +511,21 @@ function render() {
 
 // ---------- Sending ----------
 
-async function send(submitter = null) {
+async function send(submitter = null, { end = false } = {}) {
   if (sending) return;
   draft.message = $('#message').value;
-  if (!submitter && !canSend()) return;
+  if (!submitter && !end && !canSend()) return;
   sending = true;
   renderComposer();
   clearTimeout(saveTimer);
   try {
-    const result = await enqueue(() => api(`${threadPath}/messages`, { method: 'POST', body: { draft, pageId: viewingPageId, submitter } }));
+    const result = await enqueue(() => api(`${threadPath}/messages`, { method: 'POST', body: { draft, pageId: viewingPageId, submitter, end } }));
     draft = result.state.draft ?? { message: '', comments: [], pages: draft.pages };
     $('#message').value = '';
     autosize();
     thread = result.state;
     postFrame({ type: 'comments', comments: [] });
-    toast(t.sent);
+    toast(end ? t.ended : t.sent);
   } catch (error) {
     toast(`${t.sendFailed}: ${error.message}`, { error: true });
   } finally {
@@ -524,6 +605,7 @@ $('#panel-handle').addEventListener('click', () => {
   $('#panel-handle').setAttribute('aria-expanded', String(panelOpen));
 });
 $('#composer').addEventListener('submit', (event) => { event.preventDefault(); send(); });
+$('#end').addEventListener('click', () => send(null, { end: true }));
 $('#message').addEventListener('input', () => {
   draft.message = $('#message').value;
   autosize();

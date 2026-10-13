@@ -1,6 +1,6 @@
 {
   "name": "gomin",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Answer with interactive HTML pages in the browser and get the user's answers, comments, and messages back. Follows the user's language (English, 한국어, …). 고민: AI가 HTML로 답하고 계획하는 스킬.",
   "author": { "name": "shlee8405", "url": "https://github.com/shlee8405" },
   "homepage": "https://github.com/shlee8405/gomin#readme",
