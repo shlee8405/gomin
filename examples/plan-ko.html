@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>로그인 개편 계획</title>
+</head>
+<body>
+  <span class="eyebrow">계획 · 인증</span>
+  <h1>로그인을 이메일 매직 링크로 바꿔요</h1>
+  <p class="lede">비밀번호 재설정 문의가 전체 CS의 31%예요. 매직 링크로 바꾸면 이 문의가 사라지고, 기존 계정은 그대로 이어서 쓸 수 있어요.</p>
+  <div class="meta"><span>예상 기간 4일</span><span>변경 파일 9개</span><span>마이그레이션 없음</span></div>
+
+  <div class="tldr">
+    <span class="title">핵심 요약</span>
+    <ul>
+      <li><strong>무엇이 바뀌나:</strong> 로그인 화면에서 비밀번호 입력을 없애고, 이메일로 15분짜리 로그인 링크를 보내요.</li>
+      <li><strong>기존 사용자:</strong> 계정과 세션은 그대로. 비밀번호 로그인은 2주간 보조 옵션으로 남겨요.</li>
+      <li><strong>결정이 필요한 것:</strong> 메일 발송 서비스, 링크 유효 시간.</li>
+    </ul>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>31%</b><span>비밀번호 관련 CS 비중</span></div>
+    <div class="stat"><b>4일</b><span>구현 + 테스트</span></div>
+    <div class="stat"><b>0</b><span>DB 스키마 변경</span></div>
+  </div>
+
+  <h2>흐름</h2>
+  <pre class="mermaid">sequenceDiagram
+    actor U as 사용자
+    participant W as 웹
+    participant A as API
+    participant M as 메일
+    U->>W: 이메일 입력
+    W->>A: POST /auth/link
+    A->>M: 로그인 링크 발송
+    U->>A: 링크 클릭 (토큰)
+    A-->>W: 세션 쿠키 발급</pre>
+
+  <h2>진행 순서</h2>
+  <ol class="steps">
+    <li><strong>토큰 발급 API</strong><code>src/auth/link.ts</code>에 1회용 토큰 생성 · 해시 저장 · 만료 처리를 추가해요.</li>
+    <li><strong>메일 템플릿</strong>한국어/영어 템플릿 2종, 발송 실패 시 재시도 3회.</li>
+    <li><strong>로그인 화면</strong>이메일 입력 → "메일을 확인해주세요" 화면. 비밀번호 로그인은 접어둔 링크로.</li>
+    <li><strong>검증</strong>토큰 재사용 · 만료 · 다른 기기 클릭 시나리오 E2E 테스트.</li>
+  </ol>
+
+  <div class="cols-2">
+    <div>
+      <h3>이번에 포함</h3>
+      <ul class="check"><li>매직 링크 로그인</li><li>기존 비밀번호 로그인 2주 유지</li><li>발송 실패 알림</li></ul>
+    </div>
+    <div>
+      <h3>나중에</h3>
+      <ul class="cons"><li>소셜 로그인</li><li>패스키</li><li>관리자 2단계 인증</li></ul>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <span class="title">리스크</span>
+    <p>회사 메일 서버가 링크를 미리 열어보면(링크 스캐너) 토큰이 소모될 수 있어요. 클릭 후 확인 버튼을 한 번 더 누르게 해서 막을게요.</p>
+  </div>
+
+  <form>
+    <h2>결정이 필요해요</h2>
+    <fieldset>
+      <legend>메일은 어디로 보낼까요?</legend>
+      <div class="choices">
+        <label class="choice">
+          <input type="radio" name="mailer" value="ses">
+          <span><strong>AWS SES <span class="badge">추천</span></strong><small>이미 AWS를 쓰고 있어서 설정이 가장 짧아요. 월 1만 통 기준 약 1,300원.</small></span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="mailer" value="resend">
+          <span><strong>Resend</strong><small>템플릿 관리 UI가 좋아요. 월 3,000통까지 무료.</small></span>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>링크 유효 시간</legend>
+      <select name="ttl">
+        <option value="">선택해주세요</option>
+        <option value="10">10분</option>
+        <option value="15">15분 (추천)</option>
+        <option value="60">1시간</option>
+      </select>
+    </fieldset>
+
+    <label class="field">그 밖에 고려할 점
+      <textarea name="notes" placeholder="예: B2B 고객사 메일 보안 정책, 출시 일정"></textarea>
+    </label>
+
+    <div class="actions">
+      <button class="primary" name="decision" value="approve">이대로 진행</button>
+      <button name="decision" value="revise">수정해서 다시 보여줘</button>
+    </div>
+  </form>
+</body>
+</html>

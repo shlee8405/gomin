@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Why the checkout page is slow</title>
+</head>
+<body>
+  <span class="eyebrow">Explanation · Performance</span>
+  <h1>Checkout is slow because tax is computed three times</h1>
+  <p class="lede">Each cart change triggers a full tax recalculation in the API, the pricing service, and the client. Computing it once on the server and caching per cart cuts p95 from 2.8s to about 0.6s.</p>
+
+  <div class="tldr">
+    <span class="title">In short</span>
+    <ul>
+      <li>2.1s of the 2.8s p95 is spent in <code>calculateTax()</code>, called 3× per request.</li>
+      <li>The tax result only depends on cart contents and address, so it is safe to cache.</li>
+      <li>Recommended fix: compute once in the API and pass it down. About one day of work.</li>
+    </ul>
+  </div>
+
+  <h2>Where the time goes</h2>
+  <figure class="diagram">
+    <svg viewBox="0 0 640 170" role="img" aria-label="Request timeline showing three tax calculations">
+      <g font-size="13" fill="currentColor">
+        <text x="0" y="28">API</text><text x="0" y="78">Pricing</text><text x="0" y="128">Client</text>
+      </g>
+      <rect x="80" y="12" width="90" height="26" rx="5" fill="var(--soft)" stroke="var(--line)"/>
+      <rect x="170" y="12" width="150" height="26" rx="5" fill="var(--danger-soft)" stroke="var(--danger)"/>
+      <rect x="330" y="62" width="150" height="26" rx="5" fill="var(--danger-soft)" stroke="var(--danger)"/>
+      <rect x="490" y="112" width="140" height="26" rx="5" fill="var(--danger-soft)" stroke="var(--danger)"/>
+      <g font-size="12" fill="currentColor" text-anchor="middle">
+        <text x="125" y="30">auth + cart</text><text x="245" y="30">tax 0.7s</text>
+        <text x="405" y="80">tax 0.7s</text><text x="560" y="130">tax 0.7s</text>
+      </g>
+      <line x1="80" y1="158" x2="630" y2="158" stroke="var(--line)"/>
+      <text x="630" y="152" font-size="11" text-anchor="end" fill="var(--muted)">2.8s</text>
+    </svg>
+    <figcaption>One checkout request at p95. Red blocks are the same tax computation.</figcaption>
+  </figure>
+
+  <h2>Options</h2>
+  <table>
+    <thead><tr><th>Option</th><th>p95 after</th><th>Effort</th><th>Risk</th></tr></thead>
+    <tbody>
+      <tr class="highlight"><td><strong>Compute once in API <span class="badge">Recommended</span></strong></td><td class="num">0.6s</td><td>1 day</td><td class="yes">Low</td></tr>
+      <tr><td>Cache in pricing service</td><td class="num">1.4s</td><td>2 days</td><td>Medium — cache invalidation</td></tr>
+      <tr><td>Client-side only</td><td class="num">2.1s</td><td>0.5 day</td><td class="no">Tax shown ≠ tax charged</td></tr>
+    </tbody>
+  </table>
+
+  <details>
+    <summary>How I measured this</summary>
+    <p>Traces from the last 7 days (<code>service:checkout op:POST /cart</code>), 41k requests. The three spans share identical inputs in 99.7% of requests.</p>
+  </details>
+
+  <form>
+    <fieldset>
+      <legend>Which fix should I implement?</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="fix" value="api-once"><span><strong>Compute once in API</strong><small>Fastest, simplest to reason about.</small></span></label>
+        <label class="choice"><input type="radio" name="fix" value="pricing-cache"><span><strong>Cache in pricing service</strong><small>Keeps the API untouched.</small></span></label>
+      </div>
+    </fieldset>
+    <label class="field">Anything I should know?<textarea name="notes" placeholder="Deadlines, tax regions, ongoing work in this area…"></textarea></label>
+    <div class="actions"><button class="primary" name="decision" value="go">Go ahead</button></div>
+  </form>
+
+  <ol class="sources">
+    <li><a href="https://example.com/traces/checkout">Checkout traces dashboard</a></li>
+  </ol>
+</body>
+</html>

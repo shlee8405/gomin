@@ -1,0 +1,48 @@
+{
+  "name": "gomin",
+  "version": "0.1.0",
+  "description": "Let your AI agent answer in interactive HTML and get your answers back. 고민: AI가 HTML 페이지로 답하고, 계획하고, 질문하는 에이전트 스킬.",
+  "type": "module",
+  "bin": {
+    "gomin": "skills/gomin/scripts/gomin.mjs"
+  },
+  "files": [
+    "skills/",
+    ".claude-plugin/",
+    "examples/",
+    "README.md",
+    "README.en.md",
+    "LICENSE"
+  ],
+  "pi": {
+    "skills": [
+      "./skills"
+    ]
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "for f in skills/gomin/scripts/*.mjs skills/gomin/scripts/lib/*.mjs skills/gomin/scripts/ui/*.js; do node --check \"$f\" || exit 1; done",
+    "demo": "node skills/gomin/scripts/gomin.mjs open examples/plan-ko.html --thread demo"
+  },
+  "keywords": [
+    "pi-package",
+    "agent-skill",
+    "claude-code",
+    "codex",
+    "html",
+    "ai-agent",
+    "planning",
+    "korean",
+    "고민"
+  ],
+  "license": "MIT",
+  "author": "shlee8405",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shlee8405/gomin.git"
+  },
+  "homepage": "https://github.com/shlee8405/gomin#readme"
+}

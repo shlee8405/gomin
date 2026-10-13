@@ -1,0 +1,10 @@
+{
+  "name": "gomin",
+  "version": "0.1.0",
+  "description": "Answer with interactive HTML pages in the browser and get the user's answers, comments, and messages back. Korean-first. 고민: AI가 HTML로 답하고 계획하는 스킬.",
+  "author": { "name": "shlee8405", "url": "https://github.com/shlee8405" },
+  "homepage": "https://github.com/shlee8405/gomin#readme",
+  "repository": "https://github.com/shlee8405/gomin",
+  "license": "MIT",
+  "keywords": ["html", "planning", "agent-skill", "korean", "review"]
+}

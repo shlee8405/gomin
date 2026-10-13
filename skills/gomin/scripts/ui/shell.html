@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>고민 · gomin</title>
+  <link rel="icon" href="/_/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/_/shell.css">
+  <script type="module" src="/_/shell.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="gomin">
+      <img src="/_/icon.svg" alt="" width="24" height="24">
+      <span class="brand-name">고민</span>
+    </a>
+    <div class="page-meta">
+      <span id="page-title" class="page-title"></span>
+      <span id="page-rev" class="rev" hidden></span>
+      <button id="back-to-latest" class="pill-button" type="button" hidden></button>
+    </div>
+    <div class="topbar-actions">
+      <button id="comment-mode" class="tool-button" type="button" aria-pressed="false" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5Z"/></svg>
+        <span id="comment-mode-label"></span>
+      </button>
+      <button id="locale" class="tool-button quiet" type="button"></button>
+    </div>
+  </header>
+
+  <main id="thread-view" class="layout" hidden>
+    <section class="stage" aria-live="polite">
+      <div id="stage-empty" class="stage-empty" hidden></div>
+    </section>
+
+    <aside id="panel" class="panel">
+      <button id="panel-handle" class="panel-handle" type="button" aria-expanded="false">
+        <span class="handle-bar" aria-hidden="true"></span>
+        <span id="handle-summary"></span>
+      </button>
+      <div class="panel-head">
+        <h2 id="panel-title"></h2>
+        <span id="presence" class="presence"><span class="dot" aria-hidden="true"></span><span id="presence-label"></span></span>
+      </div>
+      <ol id="timeline" class="timeline"></ol>
+      <form id="composer" class="composer">
+        <div id="pending" class="pending"></div>
+        <label class="sr-only" for="message" id="message-label"></label>
+        <textarea id="message" rows="2"></textarea>
+        <div class="composer-foot">
+          <span id="composer-hint" class="hint"></span>
+          <button id="send" class="send" type="submit" disabled>
+            <span id="send-label"></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </form>
+    </aside>
+  </main>
+
+  <main id="index-view" class="index" hidden>
+    <h1 id="index-title"></h1>
+    <p id="index-subtitle" class="muted"></p>
+    <ul id="thread-list" class="thread-list"></ul>
+  </main>
+
+  <div id="banner" class="banner" role="status" hidden></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

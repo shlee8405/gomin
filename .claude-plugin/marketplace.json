@@ -1,0 +1,12 @@
+{
+  "name": "gomin",
+  "owner": { "name": "shlee8405" },
+  "description": "gomin · 고민 — let your agent reply with interactive HTML pages.",
+  "plugins": [
+    {
+      "name": "gomin",
+      "source": "./",
+      "description": "Answer with interactive HTML pages and get the user's answers back. Korean-first."
+    }
+  ]
+}
