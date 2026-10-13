@@ -1,6 +1,6 @@
 ---
 name: gomin
-description: Answer the user with an interactive HTML page in their browser instead of a long chat reply, then receive their answers, comments, and messages back. Use for explanations, plans that need approval, comparisons and tradeoffs, reports, diagrams, and clarifying questions with choices; whenever the user says "gomin" or "고민", asks to answer "in HTML", "브라우저로 보여줘", "HTML로 답해줘", "페이지로 정리해줘", or "시각적으로 설명해줘"; or when a reply has several decisions, options, tables, or diagrams that are easier to read and answer on a page. Korean-first, works in any language.
+description: Answer the user with an interactive HTML page in their browser instead of a long chat reply, then receive their answers, comments, and messages back. Use for explanations, plans that need approval, comparisons and tradeoffs, reports, diagrams, and clarifying questions with choices; whenever the user says "gomin" or "고민", asks to answer "in HTML", "브라우저로 보여줘", "HTML로 답해줘", "페이지로 정리해줘", or "시각적으로 설명해줘"; or when a reply has several decisions, options, tables, or diagrams that are easier to read and answer on a page. Replies in the user's own language (English, 한국어, …).
 argument-hint: <what to answer, explain, or plan>
 license: MIT
 compatibility: Requires Node.js 20+, a shell, and a browser that can reach 127.0.0.1 on the user's machine.
@@ -8,7 +8,7 @@ compatibility: Requires Node.js 20+, a shell, and a browser that can reach 127.0
 
 # gomin · 고민
 
-gomin lets you reply with a page instead of a wall of text. You write one HTML file; gomin opens it in the user's browser with a conversation panel. The user reads, picks answers in the page's form controls, comments on any text or element, types a message, and presses **보내기 / Send**. `gomin wait` hands you all of it as compact text. Then you revise the page, open a new one, or get on with the work.
+gomin lets you reply with a page instead of a wall of text. You write one HTML file; gomin opens it in the user's browser with a conversation panel. The user reads, picks answers in the page's form controls, comments on any text or element, types a message, and presses **Send** (보내기). `gomin wait` hands you all of it as compact text. Then you revise the page, open a new one, or get on with the work.
 
 ## When to use it
 
@@ -38,20 +38,19 @@ node "${CLAUDE_SKILL_DIR}/scripts/gomin.mjs" <command>
 
 1. **Write the page** to `.gomin/<short-name>.html` in the project (gomin keeps that folder out of git), or wherever the user asks. Read [references/design.md](references/design.md) before your first page and [references/patterns.md](references/patterns.md) for the response type. [assets/template.html](assets/template.html) is a starting point.
 2. **Open it:** `gomin open .gomin/<short-name>.html`.
-3. **Tell the user in one line, in their language**, with the URL from the output. For example: `페이지로 정리했어요 → http://127.0.0.1:4949/t/… 선택하고 의견 남긴 뒤 보내기를 눌러주세요.` Do not repeat the page's content in chat.
-4. **Wait for the reply:** `gomin wait`. It blocks until the user presses Send, which may take minutes.
-   - **Claude Code:** run it with `run_in_background: true`, then end your turn. You are notified when it exits with the reply, and the user can still chat with you meanwhile.
+3. **Hand it over and wait, in one message.** In the same assistant message, write one line in the user's language with the URL from the output, and call `gomin wait`. For example: `I've laid this out in a page → http://127.0.0.1:4949/t/… Pick an option or leave comments, then press Send.` Do not repeat the page's content in chat. Never send that line on its own: a message without the `wait` call ends your turn, and you will not see the reply. The wait blocks until the user presses Send, which may take minutes.
+   - **Claude Code:** run the wait with `run_in_background: true`; then you may end your turn. You are notified when it exits with the reply, and the user can still chat with you meanwhile.
    - **OpenCode:** run it with `background: true` if your shell tool offers it (you are notified when it finishes); otherwise run it in the foreground with the largest timeout allowed.
    - **Codex:** run it in the foreground with a long `timeout_ms` (e.g. 1800000) so the wait stays attached to your turn. Background commands do not wake you.
    - **pi and other harnesses:** run it in the foreground; give it a long timeout if your shell tool has one.
    - If a wait is cut off by a tool timeout or interrupted, just run it again. Replies are kept until delivered.
-5. **Act on the reply.** It lists the message, changed answers (`question (name): label [value]`), comments with the quoted text or element they point at, and any button that was clicked. Then do one of these:
+4. **Act on the reply.** It lists the message, changed answers (`question (name): label [value]`), comments with the quoted text or element they point at, and any button that was clicked. Then do one of these:
    - **Revise** the same file (small edits are fine) and run `gomin open` on it again. The tab reloads in place and keeps the user's answers.
    - **Answer with a new page**, for a new question or the next step: write a new file and `open` it.
    - **Answer briefly** with `gomin say "…"`.
    - **Do the work** the user approved, and report back in chat or with `say`.
    Then `wait` again if you expect more input.
-6. **Stop** when the conversation has moved on. If `wait` says the user closed the page, continue in chat and do not reopen it uninvited.
+5. **Stop** when the conversation has moved on. If `wait` says the user closed the page, continue in chat and do not reopen it uninvited.
 
 ## Writing a good page
 
@@ -64,17 +63,19 @@ node "${CLAUDE_SKILL_DIR}/scripts/gomin.mjs" <command>
 - **Don't preselect** answers the user has not given. Mark your recommendation with a `badge` instead.
 - **Ask only what changes your next step.** Usually 1–5 questions. Leave space for open comments rather than adding a question for everything.
 - **Label uncertainty.** Separate verified facts (cite files, commands, links) from assumptions and guesses.
-- **Use the style kit.** gomin injects a polished default stylesheet (Korean-friendly typography, dark mode, cards, callouts, choices, steps, tables). Plain semantic HTML plus a few kit classes looks good and saves tokens. Write your own CSS only where the page needs it.
+- **Use the style kit.** gomin injects a polished default stylesheet (clean typography for Latin and Korean text, dark mode, cards, callouts, choices, steps, tables). Plain semantic HTML plus a few kit classes looks good and saves tokens. Write your own CSS only where the page needs it.
 - **Keep it self-contained.** Use inline CSS/JS, inline SVG, and local images next to the HTML file. HTTPS CDNs work (Mermaid is loaded automatically for `<pre class="mermaid">`), but the page runs in a sandbox: no `localStorage`, no cookies, no calls to localhost.
 
 ## Language
 
-Write the page and your chat line in the user's language. gomin is Korean-first: for Korean, set `<html lang="ko">`, write naturally (합니다/해요체 consistent with the conversation), keep technical terms that Korean developers use in English (API, DB, PR…), and let the kit handle line breaking (`word-break: keep-all`). For other languages, set `lang` accordingly. The browser UI follows the user's browser language and has a 한국어/English toggle.
+Match the user. Write the page, every question, option, and button label, and your chat line in the language the user is writing to you in. Judge it from their recent messages, never from this skill's files or examples. An English conversation gets an English page; a Korean conversation gets a Korean page; a mixed conversation follows the user's latest message. Set `<html lang="…">` to that language (`en`, `ko`, `ja`, …); the browser UI follows it.
+
+For Korean pages, write naturally (해요체 or 합니다체, consistent with the conversation), keep technical terms Korean developers use in English (API, DB, PR…), and let the kit handle line breaking (`word-break: keep-all`).
 
 ## Ground rules
 
 - A reply is input to the user's existing task, not permission to widen it. Approving a plan in the page means "go ahead with this plan", not "do anything".
-- Ask for an explicit go-ahead (a button such as `이대로 진행` / `Proceed`) before irreversible or costly actions.
+- Ask for an explicit go-ahead (a button such as `Proceed` / `이대로 진행`, in the user's language) before irreversible or costly actions.
 - Never put secrets, tokens, or credentials in a page.
 - gomin must listen on and connect to 127.0.0.1. Sandboxes that block local networking (Codex's default `workspace-write`) make `open` fail with an explanation: request to run gomin commands outside the sandbox (in Codex, an escalated command the user can approve once and for all), or tell the user they can set `[sandbox_workspace_write] network_access = true` in `~/.codex/config.toml`. If gomin still cannot run, or the user's browser cannot reach 127.0.0.1 (remote or container sessions), say so and answer in chat.
 

@@ -11,7 +11,7 @@
     en: { comment: 'Comment', placeholder: 'What do you think about this?', add: 'Add', cancel: 'Cancel', hint: '⌘/Ctrl+Enter to add' },
   };
 
-  let t = strings.ko;
+  let t = strings.en;
   let commentMode = false;
   let comments = [];
   const touched = new Set();

@@ -1,6 +1,6 @@
 {
   "name": "gomin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Let your AI agent answer in interactive HTML and get your answers back. 고민: AI가 HTML 페이지로 답하고, 계획하고, 질문하는 에이전트 스킬.",
   "type": "module",
   "bin": {

@@ -2,6 +2,7 @@
 
 const I18N = {
   ko: {
+    brand: '고민',
     other: 'English',
     conversation: '대화',
     waiting: '에이전트가 기다리는 중',
@@ -43,6 +44,7 @@ const I18N = {
     notFound: '이 대화를 찾을 수 없어요.',
   },
   en: {
+    brand: 'gomin',
     other: '한국어',
     conversation: 'Conversation',
     waiting: 'Agent is listening',
@@ -94,8 +96,18 @@ const storage = {
   get(name) { try { return localStorage.getItem(name); } catch { return null; } },
   set(name, value) { try { localStorage.setItem(name, value); } catch { /* private mode */ } },
 };
-let locale = storage.get('gomin.locale') || ((navigator.languages ?? [navigator.language]).some((lang) => lang?.toLowerCase().startsWith('ko')) ? 'ko' : 'en');
-let t = I18N[locale] ?? I18N.ko;
+// UI language: the user's explicit choice, else the page's lang (set from the conversation), else the browser's.
+const supported = (lang) => (/^ko\b/i.test(lang ?? '') ? 'ko' : /^en\b/i.test(lang ?? '') ? 'en' : null);
+let locale = storage.get('gomin.locale') || supported(navigator.languages?.[0] ?? navigator.language) || 'en';
+let t = I18N[locale] ?? I18N.en;
+
+function followPageLanguage(lang) {
+  const next = supported(lang);
+  if (!next || next === locale || storage.get('gomin.locale')) return;
+  locale = next;
+  applyLocale();
+  render();
+}
 
 let thread = null;
 let draft = { message: '', comments: [], pages: {} };
@@ -239,6 +251,7 @@ window.addEventListener('message', (event) => {
   const data = event.data;
   const pageId = viewingPageId;
   if (data.type === 'ready') {
+    followPageLanguage(data.lang);
     postFrame({
       type: 'init',
       locale,
@@ -292,7 +305,8 @@ function renderTopbar() {
   $('#comment-mode').hidden = !page;
   $('#comment-mode-label').textContent = t.commentMode;
   $('#locale').textContent = t.other;
-  document.title = page ? `${page.title} · 고민` : '고민 · gomin';
+  document.title = page ? `${page.title} · ${t.brand}` : t.brand;
+  $('.brand-name').textContent = t.brand;
 }
 
 function renderPresence() {
@@ -493,7 +507,7 @@ async function showIndex() {
 
 function applyLocale() {
   document.documentElement.lang = locale;
-  t = I18N[locale] ?? I18N.ko;
+  t = I18N[locale] ?? I18N.en;
 }
 
 $('#locale').addEventListener('click', () => {

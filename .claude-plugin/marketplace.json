@@ -6,7 +6,7 @@
     {
       "name": "gomin",
       "source": "./",
-      "description": "Answer with interactive HTML pages and get the user's answers back. Korean-first."
+      "description": "Answer with interactive HTML pages and get the user's answers back. Follows the user's language, with first-class Korean support."
     }
   ]
 }

@@ -13,7 +13,7 @@ Long plans, several options, explanations that need a table or a diagram: in cha
 - **For any response, not just plans.** Explanations, comparisons, reports, code reviews, and questionnaires all live in one conversation thread.
 - **Forms are the protocol.** Every `<input>`, `<select>`, and `<textarea>` with a `name` is sent back with its question text. The agent writes no JavaScript.
 - **Comment on anything.** Select text, or click an element in comment mode; the reply says exactly what you pointed at.
-- **Korean-first, global.** Korean and English UI. Pretendard and `keep-all` line breaking. A composer that never sends in the middle of IME composition.
+- **Speaks your language.** Pages and the UI follow the language you write in: English stays English, Korean stays Korean. Korean gets first-class care: Pretendard, `keep-all` line breaking, and a composer that never sends mid-IME-composition.
 - **Built-in style kit.** Semantic HTML already looks finished: cards, callouts, choice cards, steps, tables, dark mode, and automatic Mermaid. The agent spends tokens on content, not CSS.
 - **Local and dependency-free.** Only Node.js is needed: no API keys, accounts, or MCP setup. The server listens on `127.0.0.1` only.
 
@@ -158,7 +158,7 @@ No runtime dependencies, only the Node.js standard library.
 
 ## Credits
 
-The review loop for agent-written HTML is inspired by [lavish-axi](https://github.com/kunchenguid/lavish-axi). gomin focuses on everyday answers rather than artifact review, with form-based replies and a Korean-first experience.
+The review loop for agent-written HTML is inspired by [lavish-axi](https://github.com/kunchenguid/lavish-axi). gomin focuses on everyday answers rather than artifact review, with form-based replies and natural English and Korean support.
 
 ## License
 

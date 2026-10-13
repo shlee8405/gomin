@@ -1,59 +1,60 @@
 <!doctype html>
-<html lang="ko">
+<!-- Write every visible string in the user's language and set lang to match (en, ko, ja, …). -->
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>페이지 제목 — 답을 한 줄로</title>
+  <title>Page title: the answer in a few words</title>
   <!-- The gomin kit is injected automatically. Add page-specific CSS here only if needed. -->
 </head>
 <body>
-  <span class="eyebrow">분류 · 주제</span>
-  <h1>결론을 제목으로 쓰세요</h1>
-  <p class="lede">이 페이지가 답하는 질문과 그 답을 한두 문장으로.</p>
+  <span class="eyebrow">Category · Topic</span>
+  <h1>State the conclusion as the title</h1>
+  <p class="lede">The question this page answers, and the answer, in one or two sentences.</p>
 
   <div class="tldr">
-    <span class="title">핵심 요약</span>
+    <span class="title">In short</span>
     <ul>
-      <li>가장 중요한 결론</li>
-      <li>추천하는 방향과 이유</li>
-      <li>결정이 필요한 것</li>
+      <li>The most important conclusion</li>
+      <li>What you recommend, and why</li>
+      <li>What needs a decision</li>
     </ul>
   </div>
 
-  <h2>근거</h2>
+  <h2>Why</h2>
   <div class="grid">
-    <div class="card"><h3>포인트 1</h3><p>짧은 설명.</p></div>
-    <div class="card"><h3>포인트 2</h3><p>짧은 설명.</p></div>
+    <div class="card"><h3>Point one</h3><p>A short explanation.</p></div>
+    <div class="card"><h3>Point two</h3><p>A short explanation.</p></div>
   </div>
 
-  <h2>진행 순서</h2>
+  <h2>Steps</h2>
   <ol class="steps">
-    <li><strong>첫 단계</strong>무엇을, 어디서, 어떻게.</li>
-    <li><strong>두 번째 단계</strong>…</li>
+    <li><strong>First step</strong>What, where, and how.</li>
+    <li><strong>Second step</strong>…</li>
   </ol>
 
   <form>
-    <h2>결정이 필요해요</h2>
+    <h2>Decisions needed</h2>
     <fieldset>
-      <legend>질문은 구체적으로</legend>
+      <legend>Ask a specific question</legend>
       <div class="choices">
         <label class="choice">
           <input type="radio" name="choice" value="a">
-          <span><strong>선택지 A <span class="badge">추천</span></strong><small>이걸 고르면 생기는 일.</small></span>
+          <span><strong>Option A <span class="badge">Recommended</span></strong><small>What happens if you pick this.</small></span>
         </label>
         <label class="choice">
           <input type="radio" name="choice" value="b">
-          <span><strong>선택지 B</strong><small>이걸 고르면 생기는 일.</small></span>
+          <span><strong>Option B</strong><small>What happens if you pick this.</small></span>
         </label>
       </div>
     </fieldset>
 
-    <label class="field">더 알려주실 것
-      <textarea name="notes" placeholder="제약 조건, 놓친 점, 아무거나"></textarea>
+    <label class="field">Anything else I should know?
+      <textarea name="notes" placeholder="Constraints, context, anything"></textarea>
     </label>
 
     <div class="actions">
-      <button class="primary" name="decision" value="approve">이대로 진행</button>
-      <button name="decision" value="revise">수정해서 다시 보여줘</button>
+      <button class="primary" name="decision" value="approve">Proceed</button>
+      <button name="decision" value="revise">Revise and show me again</button>
     </div>
   </form>
 </body>

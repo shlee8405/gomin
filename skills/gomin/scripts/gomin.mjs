@@ -190,7 +190,7 @@ async function main() {
       `url: ${url}`,
       `browser: ${browser}`,
       ...[...new Set([...lint(html), ...result.warnings])].map((warning) => `warning: ${warning}`),
-      `next: wait --thread ${thread}   (blocks until the user replies)`,
+      `next: in one message, give the user this URL in one line AND run "wait --thread ${thread}" (it blocks until they reply). Do not end your turn without the wait.`,
     ];
     return console.log(lines.join('\n'));
   }
